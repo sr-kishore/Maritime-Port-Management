@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maritime Port Container Management</title>
+  <meta name="description" content="Smarter container management and smoother port operations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f8f9ff;
+      --surface: #ffffff;
+      --surface-alt: #eff4ff;
+      --primary: #006491;
+      --ink: #0b1c30;
+      --ink-soft: #43474e;
+      --ink-muted: #73777f;
+      --accent: #ffb95f;
+      --accent-ink: #2a1700;
+      --navy: #173b5e;
+      --navy-deep: #002544;
+      --navy-text: #85a6ce;
+      --navy-light: #d1e4ff;
+      --outline: #c3c6cf;
+      --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+      --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+    body {
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding-top: 64px;
+      overflow-x: hidden;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    button, input { font: inherit; }
+
+    .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; width: 100%; }
+
+    /* ---------- Header ---------- */
+    .site-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      height: 64px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--outline);
+    }
+    .header-inner {
+      height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .brand-logo {
+      width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+      background: linear-gradient(135deg, #006491, #173b5e);
+      display: grid; place-items: center;
+    }
+    .brand-name {
+      font-weight: 600; font-size: 18px; color: var(--navy);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .nav { display: flex; align-items: center; gap: 24px; }
+    .nav a { font-size: 14px; color: var(--ink-soft); transition: color .2s; }
+    .nav a:first-child { font-weight: 600; font-size: 16px; color: var(--navy-deep); }
+    .nav a:hover { color: var(--primary); }
+    .header-actions { display: flex; align-items: center; gap: 16px; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 9999px; background: var(--navy-deep);
+      display: grid; place-items: center; color: #fff; flex-shrink: 0;
+    }
+    .menu-toggle {
+      display: none; background: none; border: 0; cursor: pointer; padding: 6px; color: var(--navy);
+    }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border: 0; border-radius: 8px; cursor: pointer;
+      font-weight: 600; font-size: 14px; letter-spacing: .14px;
+      transition: transform .15s, box-shadow .2s, background .2s;
+      white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-accent { background: var(--accent); color: var(--accent-ink); box-shadow: 0 1px 1px rgba(0,0,0,0.05); padding: 12px 24px; }
+    .btn-accent:hover { background: #ffc17c; }
+    .btn-soft { background: var(--surface-alt); color: #173b5e; padding: 12px 24px; }
+    .btn-soft:hover { background: #e0eaff; }
+    .btn-accent.small { padding: 8px 24px; }
+    .btn-accent.block { width: 100%; padding: 14px 24px; }
+    .btn:disabled { opacity: .7; cursor: not-allowed; transform: none; }
+
+    /* ---------- Sections ---------- */
+    section { position: relative; }
+    .section-white { background: var(--surface); }
+    .section-soft { background: var(--surface-alt); }
+    .section-pad { padding: 96px 0; }
+
+    .eyebrow {
+      font-size: 12px; font-weight: 600; color: var(--primary);
+      letter-spacing: .6px; text-transform: uppercase; line-height: 16px;
+    }
+    .h2 {
+      font-size: 40px; font-weight: 700; color: var(--ink);
+      letter-spacing: -.8px; line-height: 48px;
+    }
+    .lead { font-size: 18px; color: var(--ink-soft); line-height: 28px; }
+
+    /* ---------- Hero ---------- */
+    .hero { background: var(--surface); padding: 96px 0; overflow: hidden; }
+    .hero::before, .hero::after {
+      content: ""; position: absolute; border-radius: 9999px; filter: blur(64px); pointer-events: none;
+    }
+    .hero::before { width: 384px; height: 384px; top: -96px; right: -96px; background: rgba(201,230,255,0.3); }
+    .hero::after { width: 320px; height: 320px; bottom: -96px; left: -96px; background: rgba(209,228,255,0.4); }
+    .hero-grid {
+      position: relative; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 48px; align-items: center;
+    }
+    .hero-left { grid-column: 1 / span 6; display: flex; flex-direction: column; gap: 24px; }
+    .hero-right { grid-column: 7 / span 6; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+      background: var(--surface-alt); padding: 4px 16px; border-radius: 9999px;
+      font-size: 12px; font-weight: 600; color: #006491; letter-spacing: .48px;
+    }
+    .hero h1 {
+      font-size: 56px; font-weight: 700; color: var(--ink); letter-spacing: -1.4px; line-height: 64px;
+    }
+    .hero-sub { font-size: 18px; color: var(--ink-soft); line-height: 28px; max-width: 592px; }
+    .hero-ctas { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding-top: 4px; }
+    .trust-row {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; padding-top: 16px;
+    }
+    .trust-item { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .trust-icon {
+      width: 32px; height: 32px; border-radius: 8px; background: var(--surface-alt);
+      display: grid; place-items: center; flex-shrink: 0; color: var(--primary);
+    }
+    .trust-text { font-size: 14px; font-weight: 500; color: var(--ink); line-height: 20px; }
+
+    /* Image placeholders (swap for real photos, see notes) */
+    .photo {
+      width: 100%; border-radius: 16px; overflow: hidden; position: relative;
+      background: linear-gradient(135deg, #cfe4f4 0%, #9cc3df 45%, #5b8fb8 100%);
+      box-shadow: var(--shadow-lg);
+    }
+    .photo.ratio-43 { aspect-ratio: 4 / 3; }
+    .photo.hero-photo { aspect-ratio: 4 / 3; }
+    .photo-label {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      color: rgba(11,28,48,0.55); font-size: 14px; font-weight: 500; text-align: center; padding: 16px;
+    }
+
+    /* ---------- Lead form section ---------- */
+    .form-grid {
+      display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 48px; align-items: start;
+    }
+    .form-left { grid-column: 1 / span 6; display: flex; flex-direction: column; gap: 24px; }
+    .form-right { grid-column: 7 / span 6; }
+    .form-intro { display: flex; flex-direction: column; gap: 8px; }
+    .form-intro .h2 { line-height: 48px; }
+    .card-photo {
+      background: var(--surface); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-md);
+    }
+    .checklist { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+    .checklist li {
+      list-style: none; display: flex; align-items: center; gap: 16px;
+      font-size: 16px; font-weight: 500; color: var(--ink);
+    }
+    .check-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--primary); }
+
+    .form-card {
+      background: var(--surface); border-radius: 16px; padding: 48px;
+      box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 24px; position: relative;
+    }
+    .form-card h3 { font-size: 28px; font-weight: 500; color: var(--ink); letter-spacing: -.28px; line-height: 36px; }
+    .form-card .sub { font-size: 16px; color: var(--ink-soft); line-height: 24px; }
+    .form-head { display: flex; flex-direction: column; gap: 4px; }
+    .lead-form { display: flex; flex-direction: column; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 14px; font-weight: 600; color: var(--ink); letter-spacing: .14px; line-height: 20px; }
+    .field input {
+      width: 100%; background: var(--surface-alt); border: 1px solid transparent; border-radius: 8px;
+      padding: 14px 16px; font-size: 16px; color: var(--ink); outline: none;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    .field input::placeholder { color: var(--ink-muted); }
+    .field input:focus { background: #fff; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(0,100,145,0.15); }
+    .field input.invalid { border-color: #ba1a1a; }
+    .field .error-text { font-size: 12px; color: #ba1a1a; min-height: 0; display: none; }
+    .field.has-error .error-text { display: block; }
+    .btn-row { padding-top: 8px; }
+    .form-note {
+      text-align: center; font-size: 14px; color: var(--ink-soft); line-height: 20px; padding-top: 4px;
+    }
+    .form-status {
+      display: none; padding: 12px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; line-height: 20px;
+    }
+    .form-status.show { display: block; }
+    .form-status.success { background: #e6f4ea; color: #1e6b34; }
+    .form-status.error { background: #fdecea; color: #a4262c; }
+
+    /* ---------- Reviews ---------- */
+    .centered-header {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      gap: 8px; max-width: 672px; margin: 0 auto;
+    }
+    .centered-header .h2 { text-align: center; }
+    .centered-header .lead { text-align: center; }
+    .review-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 48px;
+    }
+    .review-card {
+      background: var(--surface-alt); border-radius: 12px; padding: 24px;
+      box-shadow: var(--shadow-sm); display: flex; flex-direction: column; gap: 48px;
+    }
+    .review-top { display: flex; flex-direction: column; gap: 16px; }
+    .review-bar { display: flex; align-items: center; justify-content: space-between; }
+    .review-icon {
+      width: 40px; height: 40px; border-radius: 8px; background: var(--surface);
+      box-shadow: var(--shadow-sm); display: grid; place-items: center; color: var(--primary);
+    }
+    .review-quote-mark { color: var(--primary); opacity: .5; }
+    .review-title { font-size: 18px; font-weight: 600; color: var(--ink); line-height: 26px; }
+    .review-body { font-size: 16px; color: var(--ink-soft); line-height: 24px; }
+    .review-source {
+      font-size: 12px; font-weight: 600; color: var(--primary); letter-spacing: .48px;
+      padding-top: 14px; border-top: 0;
+    }
+    .closing-line {
+      text-align: center; font-size: 18px; font-weight: 600; color: var(--navy);
+      line-height: 26px; padding-top: 8px; margin-top: 48px;
+    }
+
+    /* ---------- FAQ ---------- */
+    .faq-section { padding: 96px 0; }
+    .faq-wrap { max-width: 896px; margin: 0 auto; padding: 0 24px; display: flex; flex-direction: column; gap: 48px; }
+    .faq-list { display: flex; flex-direction: column; gap: 16px; }
+    .faq-item {
+      background: var(--surface); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden;
+    }
+    .faq-btn {
+      width: 100%; background: none; border: 0; cursor: pointer; text-align: left;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 16px 24px;
+      font-size: 18px; font-weight: 600; color: var(--ink); line-height: 26px;
+    }
+    .faq-icon { width: 14px; height: 14px; flex-shrink: 0; color: var(--primary); transition: transform .25s; }
+    .faq-item.open .faq-icon { transform: rotate(45deg); }
+    .faq-panel {
+      display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease;
+    }
+    .faq-item.open .faq-panel { grid-template-rows: 1fr; }
+    .faq-panel-inner { overflow: hidden; }
+    .faq-answer { padding: 0 24px 16px; font-size: 16px; color: var(--ink-soft); line-height: 24px; }
+
+    /* ---------- Footer ---------- */
+    .site-footer { background: var(--navy); padding: 48px 0 24px; color: var(--navy-text); }
+    .footer-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 48px;
+    }
+    .footer-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+    .footer-brand { display: flex; align-items: center; gap: 8px; }
+    .footer-brand-name { font-size: 18px; font-weight: 600; color: #fff; line-height: 26px; }
+    .footer-tagline { font-size: 16px; font-weight: 500; color: var(--navy-text); line-height: 24px; }
+    .footer-desc { font-size: 14px; color: var(--navy-text); line-height: 20px; }
+    .footer-heading { font-size: 18px; font-weight: 600; color: #fff; line-height: 26px; }
+    .footer-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .footer-list a, .footer-list span { font-size: 14px; color: var(--navy-text); line-height: 20px; transition: color .2s; }
+    .footer-list a:hover { color: #fff; }
+    .contact-row { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--navy-text); }
+    .contact-row svg { flex-shrink: 0; }
+    .footer-cta-text { font-size: 14px; color: var(--navy-light); line-height: 20px; padding-top: 4px; }
+    .footer-cta {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--accent); color: var(--accent-ink); border-radius: 8px;
+      padding: 10px 24px; font-size: 14px; font-weight: 600; letter-spacing: .14px; align-self: flex-start;
+    }
+    .footer-bottom {
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+      padding-top: 24px; margin-top: 8px; border-top: 1px solid rgba(133,166,206,0.2); flex-wrap: wrap;
+    }
+    .footer-bottom p, .footer-bottom a { font-size: 14px; color: var(--navy-text); line-height: 20px; }
+    .footer-bottom a:hover { color: #fff; }
+    .footer-links { display: flex; gap: 24px; }
+
+    .site-footer-bar {
+      background: var(--surface-alt); border-top: 1px solid var(--outline); padding: 49px 0 48px;
+    }
+    .site-footer-bar-inner {
+      display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+      max-width: 1280px; margin: 0 auto; padding: 0 24px;
+    }
+    .site-footer-bar p, .site-footer-bar a { font-size: 14px; color: var(--ink-soft); line-height: 20px; }
+    .site-footer-bar a:hover { color: var(--primary); }
+    .site-footer-bar nav { display: flex; gap: 24px; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 1100px) {
+      .nav { gap: 16px; }
+      .nav a:first-child { font-size: 15px; }
+      .hero h1 { font-size: 48px; line-height: 56px; }
+      .h2 { font-size: 34px; line-height: 42px; }
+    }
+
+    @media (max-width: 960px) {
+      .menu-toggle { display: block; }
+      .nav {
+        position: absolute; top: 64px; left: 0; right: 0; flex-direction: column; align-items: stretch;
+        background: #fff; border-bottom: 1px solid var(--outline); padding: 16px 24px; gap: 4px;
+        display: none; box-shadow: var(--shadow-md);
+      }
+      .nav.open { display: flex; }
+      .nav a { padding: 10px 0; font-size: 16px; }
+      .header-actions .btn-accent { display: none; }
+      .hero-left, .hero-right, .form-left, .form-right { grid-column: 1 / -1; }
+      .hero { padding: 64px 0; }
+      .hero h1 { font-size: 44px; line-height: 52px; letter-spacing: -1px; }
+      .section-pad, .faq-section { padding: 72px 0; }
+      .form-card { padding: 32px; }
+      .review-grid { grid-template-columns: 1fr; }
+      .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .centered-header { padding: 0 8px; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding-top: 64px; }
+      .container, .faq-wrap { padding: 0 16px; }
+      .hero h1 { font-size: 36px; line-height: 44px; letter-spacing: -.6px; }
+      .hero-sub, .lead { font-size: 16px; line-height: 24px; }
+      .h2 { font-size: 28px; line-height: 36px; letter-spacing: -.4px; }
+      .trust-row { grid-template-columns: 1fr; }
+      .form-card { padding: 24px; }
+      .form-card h3 { font-size: 24px; line-height: 32px; }
+      .faq-btn { font-size: 16px; padding: 14px 16px; }
+      .faq-answer { padding: 0 16px 14px; }
+      .footer-grid { grid-template-columns: 1fr; gap: 32px; }
+      .brand-name { font-size: 16px; }
+      .btn-accent.block { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============ HEADER ============ -->
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a href="#top" class="brand" aria-label="Maritime Port Container Management home">
+        <span class="brand-logo" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16s2 2 5 2 5-2 7-2 5 2 8 2"/><path d="M4 12l8-3 8 3-2 6H6z"/><path d="M12 9V4"/></svg>
+        </span>
+        <span class="brand-name">Maritime Port Container Management</span>
+      </a>
+
+      <nav class="nav" id="mainNav" aria-label="Primary">
+        <a href="#top">Home</a>
+        <a href="#about">About</a>
+        <a href="#features">Features</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#faqs">FAQs</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <div class="header-actions">
+        <a href="#get-started" class="btn btn-accent small">Get Started</a>
+        <span class="avatar" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        </span>
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu" aria-expanded="false">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ SECTION 1: HERO ============ -->
+    <section class="hero" id="about">
+      <div class="container hero-grid">
+        <div class="hero-left">
+          <span class="pill">MARITIME LOGISTICS PLATFORM</span>
+
+          <h1>Smarter Container<br />Management.<br />Smoother Port<br />Operations.</h1>
+
+          <p class="hero-sub">Manage every container, vessel, and yard location from one centralized platform. Keep track of arrivals, departures, and container movements while making port operations simpler, faster, and more organized.</p>
+
+          <div class="hero-ctas">
+            <a href="#get-started" class="btn btn-accent">
+              Get Started
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+            <a href="#features" class="btn btn-soft">Explore Features</a>
+          </div>
+
+          <div class="trust-row">
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8l-9-5-9 5v8l9 5z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+              </span>
+              <span class="trust-text">Real-time Container<br />Tracking</span>
+            </div>
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16s2 2 5 2 5-2 7-2 5 2 8 2"/><path d="M4 12l8-3 8 3-2 6H6z"/></svg>
+              </span>
+              <span class="trust-text">Easy Vessel<br />Assignment</span>
+            </div>
+            <div class="trust-item">
+              <span class="trust-icon" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              </span>
+              <span class="trust-text">Complete Movement<br />History</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <!-- Replace with: <img src="images/port-hero.jpg" alt="Commercial shipping port with cargo ships and container cranes"> -->
+          <div class="photo hero-photo" role="img" aria-label="Commercial shipping port with cargo ships and container cranes">
+            <div class="photo-label">Commercial shipping port with cargo ships and container cranes</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 2: LEAD FORM ============ -->
+    <section class="section-soft section-pad" id="get-started">
+      <div class="container form-grid">
+        <div class="form-left">
+          <div class="form-intro">
+            <span class="eyebrow">OPERATIONAL EFFICIENCY</span>
+            <h2 class="h2">Let's Make Your Port<br />Operations More Efficient</h2>
+            <p class="lead">Every container matters. Get started with a smarter way to organize and manage your port activities.</p>
+          </div>
+
+          <div class="card-photo">
+            <!-- Replace with: <img src="images/terminal-yard.jpg" alt="Organized modern container terminal yard"> -->
+            <div class="photo ratio-43" role="img" aria-label="Organized modern container terminal yard" style="box-shadow:none;border-radius:0;">
+              <div class="photo-label">Organized modern container terminal yard</div>
+            </div>
+          </div>
+
+          <ul class="checklist">
+            <li>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Better container visibility.
+            </li>
+            <li>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Organized vessel coordination.
+            </li>
+            <li>
+              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              Simplified port operations.
+            </li>
+          </ul>
+        </div>
+
+        <div class="form-right">
+          <div class="form-card">
+            <div class="form-head">
+              <h3>Get Started Today</h3>
+              <p class="sub">Tell us a little about yourself and discover how our platform can help simplify your daily operations.</p>
+            </div>
+
+            <form class="lead-form" id="leadForm" novalidate>
+              <div class="field" id="field-name">
+                <label for="name">Full Name</label>
+                <input id="name" name="name" type="text" placeholder="e.g. Captain Rajesh Verma" autocomplete="name" required />
+                <span class="error-text">Please enter your full name.</span>
+              </div>
+
+              <div class="field" id="field-email">
+                <label for="email">Work Email Address</label>
+                <input id="email" name="email" type="email" placeholder="name@portauthority.com" autocomplete="email" required />
+                <span class="error-text">Please enter a valid email address.</span>
+              </div>
+
+              <div class="field" id="field-phone">
+                <label for="phone">Contact Number</label>
+                <input id="phone" name="phone" type="tel" placeholder="+91 98765 43210" autocomplete="tel" required />
+                <span class="error-text">Please enter a valid contact number.</span>
+              </div>
+
+              <div class="form-status" id="formStatus" role="status" aria-live="polite"></div>
+
+              <div class="btn-row">
+                <button type="submit" class="btn btn-accent block" id="submitBtn">Get Started Today</button>
+              </div>
+
+              <p class="form-note">Your information is safe with us. We respect your privacy and will only use your details to respond to your enquiry.</p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 3: REVIEWS / FEEDBACK ============ -->
+    <section class="section-white section-pad" id="reviews">
+      <div class="container">
+        <div class="centered-header">
+          <span class="eyebrow">OPERATIONAL FEEDBACK</span>
+          <h2 class="h2">What Better Port Management<br />Looks Like</h2>
+          <p class="lead">Good port operations depend on clear communication and organized information. See what users value in a simpler container management experience.</p>
+        </div>
+
+        <div class="review-grid">
+          <article class="review-card">
+            <div class="review-top">
+              <div class="review-bar">
+                <span class="review-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8l-9-5-9 5v8l9 5z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg>
+                </span>
+                <span class="review-quote-mark" aria-hidden="true">
+                  <svg width="20" height="14" viewBox="0 0 24 16" fill="currentColor"><path d="M0 16V9.6C0 4.3 2.7 1.1 8 0l1 2.2C6 3.4 4.6 5.4 4.4 8H9v8H0zm14 0V9.6C14 4.3 16.7 1.1 22 0l1 2.2c-3 1.2-4.4 3.2-4.6 5.8H23v8h-9z"/></svg>
+                </span>
+              </div>
+              <h3 class="review-title">Container Tracking</h3>
+              <p class="review-body">"Having container information organized in one place makes it easier to find records and understand where containers are located."</p>
+            </div>
+            <p class="review-source">Sample Feedback — Port Operations Team</p>
+          </article>
+
+          <article class="review-card">
+            <div class="review-top">
+              <div class="review-bar">
+                <span class="review-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16s2 2 5 2 5-2 7-2 5 2 8 2"/><path d="M4 12l8-3 8 3-2 6H6z"/></svg>
+                </span>
+                <span class="review-quote-mark" aria-hidden="true">
+                  <svg width="20" height="14" viewBox="0 0 24 16" fill="currentColor"><path d="M0 16V9.6C0 4.3 2.7 1.1 8 0l1 2.2C6 3.4 4.6 5.4 4.4 8H9v8H0zm14 0V9.6C14 4.3 16.7 1.1 22 0l1 2.2c-3 1.2-4.4 3.2-4.6 5.8H23v8h-9z"/></svg>
+                </span>
+              </div>
+              <h3 class="review-title">Vessel Coordination</h3>
+              <p class="review-body">"Keeping vessel assignments and container details together helps our team stay organized and reduces confusion during daily operations."</p>
+            </div>
+            <p class="review-source">Sample Feedback — Terminal Coordinator</p>
+          </article>
+
+          <article class="review-card">
+            <div class="review-top">
+              <div class="review-bar">
+                <span class="review-icon" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                </span>
+                <span class="review-quote-mark" aria-hidden="true">
+                  <svg width="20" height="14" viewBox="0 0 24 16" fill="currentColor"><path d="M0 16V9.6C0 4.3 2.7 1.1 8 0l1 2.2C6 3.4 4.6 5.4 4.4 8H9v8H0zm14 0V9.6C14 4.3 16.7 1.1 22 0l1 2.2c-3 1.2-4.4 3.2-4.6 5.8H23v8h-9z"/></svg>
+                </span>
+              </div>
+              <h3 class="review-title">Movement History</h3>
+              <p class="review-body">"Being able to review container movement records makes it easier to follow operational activities and check previous updates."</p>
+            </div>
+            <p class="review-source">Sample Feedback — Yard Supervisor</p>
+          </article>
+        </div>
+
+        <p class="closing-line">Better visibility starts with better organization. Make every container movement easier to manage.</p>
+      </div>
+    </section>
+
+    <!-- ============ SECTION 4: FAQ ============ -->
+    <section class="section-soft faq-section" id="faqs">
+      <div class="faq-wrap">
+        <div class="centered-header">
+          <span class="eyebrow">SUPPORT &amp; CLARITY</span>
+          <h2 class="h2">Frequently Asked Questions</h2>
+          <p class="lead">Find answers to common questions about managing containers and organizing port operations.</p>
+        </div>
+
+        <div class="faq-list" id="faqList">
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              What is Maritime Port Container Management?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">A centralized platform for managing container records, vessel assignments, yard locations, arrivals, departures, and movement history in one place.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              How can I track a container?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">Search any container to see its current status, yard location, and the full history of its movements.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Can I manage vessel assignments?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">Yes. Assign containers to vessels and keep those details together so your team stays coordinated.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Can I check container arrival and departure details?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">Yes. Arrival and departure records are tracked alongside each container and vessel.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              How does the system help prevent misplaced containers?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">By recording yard locations and movements as they happen, so every container can be located quickly.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Can I view a container's movement history?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">Yes. Every movement is logged so you can review past records and updates at any time.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Is the platform easy to use for beginners?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">Yes. The interface is designed to be simple, so new team members can get started quickly.</p></div></div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-btn" aria-expanded="false">
+              Who can use this platform?
+              <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <div class="faq-panel"><div class="faq-panel-inner"><p class="faq-answer">Port operations teams, terminal coordinators, yard supervisors, and anyone who manages container activity.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ SECTION 5: FOOTER ============ -->
+  <footer class="site-footer" id="features" aria-label="Site footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="footer-brand">
+            <svg width="21" height="23" viewBox="0 0 24 24" fill="none" stroke="#85a6ce" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16s2 2 5 2 5-2 7-2 5 2 8 2"/><path d="M4 12l8-3 8 3-2 6H6z"/><path d="M12 9V4"/></svg>
+            <span class="footer-brand-name">Maritime Port<br />Container Management</span>
+          </div>
+          <p class="footer-tagline">Simplifying Port Operations, One Container at a Time.</p>
+          <p class="footer-desc">A smarter way to manage container records, vessel assignments, yard locations, arrivals, departures, and movement history.</p>
+        </div>
+
+        <div class="footer-col" id="quick-links">
+          <h4 class="footer-heading">Quick Links</h4>
+          <ul class="footer-list">
+            <li><a href="#top">Home</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#reviews">Feedback</a></li>
+            <li><a href="#faqs">FAQs</a></li>
+            <li><a href="#contact">Contact Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 class="footer-heading">Our Features</h4>
+          <ul class="footer-list">
+            <li><span>Container Management</span></li>
+            <li><span>Vessel Assignment</span></li>
+            <li><span>Yard Location Tracking</span></li>
+            <li><span>Arrival &amp; Departure Management</span></li>
+            <li><span>Container Status</span></li>
+            <li><span>Movement History</span></li>
+          </ul>
+        </div>
+
+        <div class="footer-col" id="contact">
+          <h4 class="footer-heading">Contact Information</h4>
+          <div class="footer-col" style="gap:8px;">
+            <div class="contact-row">
+              <svg width="15" height="12" viewBox="0 0 24 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="14" rx="2"/><path d="M2 4l10 7 10-7"/></svg>
+              <span>support@yourwebsite.com</span>
+            </div>
+            <div class="contact-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
+              <span>+91 XXXXX XXXXX</span>
+            </div>
+            <div class="contact-row">
+              <svg width="12" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Your Port Location</span>
+            </div>
+          </div>
+          <p class="footer-cta-text">Have questions or suggestions? We'd love to hear from you.</p>
+          <a href="#get-started" class="footer-cta">Get Started</a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 Maritime Port Container Management. All Rights Reserved.</p>
+        <div class="footer-links">
+          <a href="#top">Privacy Policy</a>
+          <a href="#top">Terms &amp; Conditions</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="site-footer-bar">
+    <div class="site-footer-bar-inner">
+      <p>© 2025 Maritime Port Container Management. All rights reserved.</p>
+      <nav aria-label="Secondary">
+        <a href="#top">Home</a>
+        <a href="#features">Features</a>
+        <a href="#faqs">FAQs</a>
+      </nav>
+    </div>
+  </div>
+
+  <script>
+    /* ---------- Config ---------- */
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtsYrT-jNQKjxWoFDVKuYXogFrCCA1l8To4qexcsV9Viwbp1lfw7282MAkCS_OyJxu/exec";
+
+    /* ---------- Mobile menu ---------- */
+    const menuToggle = document.getElementById("menuToggle");
+    const mainNav = document.getElementById("mainNav");
+    menuToggle.addEventListener("click", () => {
+      const open = mainNav.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(open));
+    });
+    mainNav.querySelectorAll("a").forEach((a) =>
+      a.addEventListener("click", () => {
+        mainNav.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+      })
+    );
+
+    /* ---------- FAQ accordion ---------- */
+    document.querySelectorAll(".faq-item").forEach((item) => {
+      const btn = item.querySelector(".faq-btn");
+      btn.addEventListener("click", () => {
+        const open = item.classList.toggle("open");
+        btn.setAttribute("aria-expanded", String(open));
+      });
+    });
+
+    /* ---------- Lead form ---------- */
+    const form = document.getElementById("leadForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const statusBox = document.getElementById("formStatus");
+
+    const fields = {
+      name: document.getElementById("name"),
+      email: document.getElementById("email"),
+      phone: document.getElementById("phone"),
+    };
+
+    function setFieldError(key, message) {
+      const wrap = document.getElementById("field-" + key);
+      wrap.classList.toggle("has-error", !!message);
+      fields[key].classList.toggle("invalid", !!message);
+    }
+
+    function validate() {
+      let ok = true;
+      const name = fields.name.value.trim();
+      const email = fields.email.value.trim();
+      const phone = fields.phone.value.trim();
+
+      setFieldError("name", name.length < 2 ? "required" : "");
+      if (name.length < 2) ok = false;
+
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      setFieldError("email", emailOk ? "" : "invalid");
+      if (!emailOk) ok = false;
+
+      const phoneOk = /^[+0-9()\-\s]{7,20}$/.test(phone);
+      setFieldError("phone", phoneOk ? "" : "invalid");
+      if (!phoneOk) ok = false;
+
+      return ok;
+    }
+
+    function showStatus(type, message) {
+      statusBox.className = "form-status show " + type;
+      statusBox.textContent = message;
+    }
+
+    function setLoading(isLoading) {
+      submitBtn.disabled = isLoading;
+      submitBtn.textContent = isLoading ? "Submitting..." : "Get Started Today";
+    }
+
+    function showSuccess() {
+      setLoading(false);
+      form.reset();
+      showStatus("success", "Thank you! We have received your details and will be in touch soon.");
+    }
+
+    function showError() {
+      setLoading(false);
+      showStatus("error", "Something went wrong. Please check your connection and try again.");
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      statusBox.className = "form-status";
+      statusBox.textContent = "";
+
+      if (!validate()) {
+        showStatus("error", "Please correct the highlighted fields.");
+        return;
+      }
+
+      setLoading(true);
+
+      const url = SCRIPT_URL + "?" + new URLSearchParams({
+        name: fields.name.value.trim(),
+        email: fields.email.value.trim(),
+        phone: fields.phone.value.trim(),
+      });
+
+      fetch(url, { method: "GET", mode: "no-cors" })
+        .then(() => showSuccess())
+        .catch(() => showError());
+    });
+
+    ["name", "email", "phone"].forEach((key) => {
+      fields[key].addEventListener("input", () => setFieldError(key, ""));
+    });
+  </script>
+</body>
+</html>
